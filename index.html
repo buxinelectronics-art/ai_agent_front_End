@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JobAgent — Abdulkadir Jabbi</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#222;
+  --border:#2a2a2a;--border2:#333;
+  --text:#e8e8e8;--text2:#888;--text3:#555;
+  --accent:#00ff88;--accent2:#00cc6a;
+  --adim:rgba(0,255,136,.08);--adim2:rgba(0,255,136,.15);
+  --red:#ff4444;--rdim:rgba(255,68,68,.1);
+  --amber:#ffaa00;--amdim:rgba(255,170,0,.1);
+  --blue:#4488ff;--bdim:rgba(68,136,255,.1);
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh}
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-t{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--accent)}
+.logo-s{font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sb-nav{padding:14px 0;flex:1}
+.nav-sec{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;
+  padding:12px 20px 5px;font-family:var(--mono)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;color:var(--text2);
+  cursor:pointer;font-size:13px;transition:all .15s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:var(--adim)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.sb-foot{padding:14px 20px;border-top:1px solid var(--border)}
+.avatar{width:30px;height:30px;background:var(--adim2);border:1px solid var(--accent);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600}
+.user-chip{display:flex;align-items:center;gap:10px}
+.uname{font-size:13px;color:var(--text)}
+.utitle{font-size:10px;color:var(--text3)}
+
+/* MAIN */
+.main{margin-left:220px;flex:1}
+.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;padding:0 28px;background:var(--bg);position:sticky;top:0;z-index:50}
+.page-path{font-family:var(--mono);font-size:12px;color:var(--text3)}
+.tb-right{display:flex;align-items:center;gap:10px}
+.status-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
+  font-size:11px;font-family:var(--mono);font-weight:500;cursor:pointer;border:1px solid;transition:all .2s}
+.status-pill.on{background:var(--adim);border-color:var(--accent);color:var(--accent)}
+.status-pill.off{background:var(--rdim);border-color:var(--red);color:var(--red)}
+.pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* PAGES */
+.page{display:none;padding:28px}
+.page.active{display:block}
+.ph{margin-bottom:24px}
+.ph h1{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:-.5px}
+.ph p{color:var(--text2);font-size:13px;margin-top:4px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:20px}
+.card-title{font-family:var(--mono);font-size:11px;color:var(--text3);letter-spacing:1px;
+  text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);margin-bottom:8px}
+.stat-val{font-family:var(--mono);font-size:28px;font-weight:600;line-height:1}
+.stat-val.g{color:var(--accent)}.stat-val.r{color:var(--red)}.stat-val.a{color:var(--amber)}
+.stat-delta{font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.sec{margin-bottom:20px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:4px;
+  font-size:12px;font-family:var(--mono);font-weight:500;cursor:pointer;border:1px solid;
+  transition:all .15s;letter-spacing:.3px}
+.btn-p{background:var(--accent);border-color:var(--accent);color:#000}
+.btn-p:hover{background:var(--accent2)}
+.btn-d{background:var(--rdim);border-color:var(--red);color:var(--red)}
+.btn-g{background:transparent;border-color:var(--border2);color:var(--text2)}
+.btn-g:hover{border-color:var(--text2);color:var(--text);background:var(--bg3)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* FORMS */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:.5px;margin-bottom:5px}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;
+  padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--text3)}
+textarea.fi{resize:vertical;min-height:80px}
+select.fi{cursor:pointer}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.ti{flex:1}.tn{font-size:13px;color:var(--text)}.td{font-size:11px;color:var(--text3);margin-top:1px}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{display:none}
+.tt{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;transition:all .2s}
+.th{position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--text3);transition:all .2s}
+.toggle input:checked~.tt{background:var(--adim);border-color:var(--accent)}
+.toggle input:checked~.th{background:var(--accent);left:19px}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse}
+.dt th{text-align:left;padding:10px 14px;font-size:10px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:1px;font-family:var(--mono);border-bottom:1px solid var(--border);font-weight:400}
+.dt td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);font-size:13px}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:var(--bg3)}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:3px;
+  font-size:10px;font-family:var(--mono);font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.bg{background:var(--adim);color:var(--accent);border:1px solid rgba(0,255,136,.2)}
+.br{background:var(--rdim);color:var(--red);border:1px solid rgba(255,68,68,.2)}
+.ba{background:var(--amdim);color:var(--amber);border:1px solid rgba(255,170,0,.2)}
+.bb{background:var(--bdim);color:var(--blue);border:1px solid rgba(68,136,255,.2)}
+.bk{background:var(--bg4);color:var(--text2);border:1px solid var(--border2)}
+
+/* JOB CARD */
+.jcard{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:16px;
+  margin-bottom:10px;transition:border-color .15s;cursor:pointer}
+.jcard:hover{border-color:var(--border2)}
+.jch{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.jt{font-size:14px;font-weight:500}.jco{font-size:12px;color:var(--text2);margin-top:2px}
+.jmeta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.jtag{font-size:11px;color:var(--text3);background:var(--bg4);padding:2px 8px;border-radius:3px;font-family:var(--mono)}
+.score-ring{width:44px;height:44px;border-radius:50%;border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-size:13px;font-weight:600;flex-shrink:0}
+.score-ring.hi{border-color:var(--accent);color:var(--accent)}
+.score-ring.md{border-color:var(--amber);color:var(--amber)}
+.score-ring.lo{border-color:var(--red);color:var(--red)}
+
+/* TERMINAL */
+.term{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;
+  font-family:var(--mono);font-size:12px;line-height:1.8;max-height:260px;overflow-y:auto}
+.ll{display:flex;gap:12px}
+.lt{color:var(--text3);flex-shrink:0}.lm{color:var(--text2)}
+.lm.s{color:var(--accent)}.lm.e{color:var(--red)}.lm.i{color:var(--blue)}.lm.w{color:var(--amber)}
+
+/* UPLOAD */
+.upload{border:1.5px dashed var(--border2);border-radius:6px;padding:26px;text-align:center;cursor:pointer;transition:all .2s}
+.upload:hover{border-color:var(--accent);background:var(--adim)}
+.uicon{font-size:26px;color:var(--text3);margin-bottom:8px}
+.utxt{font-size:13px;color:var(--text2)}.uhint{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+
+/* RANGE */
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bg4);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 18px;font-size:12px;font-family:var(--mono);color:var(--text3);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab:hover{color:var(--text2)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* SKILLS */
+.skill-tags{display:flex;flex-wrap:wrap;gap:6px}
+.stag{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);font-size:11px;
+  padding:3px 10px;border-radius:3px;font-family:var(--mono);cursor:pointer;display:flex;align-items:center;gap:5px}
+.stag:hover{border-color:var(--red);color:var(--red)}
+.sadd{background:transparent;border:1px dashed var(--border2);color:var(--text3);font-size:11px;
+  padding:3px 10px;border-radius:3px;font-family:var(--mono);cursor:pointer;transition:all .15s}
+.sadd:hover{border-color:var(--accent);color:var(--accent)}
+
+/* BARS */
+.bar-chart{display:flex;gap:8px;align-items:flex-end;height:80px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{width:100%;background:var(--accent);border-radius:2px 2px 0 0;opacity:.7;transition:opacity .15s}
+.bar:hover{opacity:1}.bl{font-size:10px;color:var(--text3);font-family:var(--mono)}
+
+/* BANNER */
+.banner{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:6px;
+  font-size:13px;margin-bottom:20px;border:1px solid}
+.bi{background:var(--bdim);border-color:rgba(68,136,255,.3);color:var(--blue)}
+.bs{background:var(--adim);border-color:rgba(0,255,136,.3);color:var(--accent)}
+
+/* CONTROL PANEL */
+.ctrl{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:22px;
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.ctrl h2{font-family:var(--mono);font-size:18px;font-weight:600}
+.ctrl p{font-size:12px;color:var(--text2);margin-top:4px}
+.big-btn{display:flex;align-items:center;gap:10px;padding:10px 20px;border-radius:4px;
+  font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;border:1px solid;transition:all .2s;letter-spacing:.5px}
+.big-btn.on{background:var(--adim);border-color:var(--accent);color:var(--accent)}
+.big-btn.on:hover{background:var(--adim2)}
+.big-btn.off{background:var(--rdim);border-color:var(--red);color:var(--red)}
+
+/* PROGRESS */
+.pbar{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:7px}
+.pfill{height:100%;background:var(--accent);border-radius:2px}
+
+/* LANDING */
+.hero{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - 52px);text-align:center;padding:40px 28px}
+.hero-tag{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--accent);
+  text-transform:uppercase;border:1px solid rgba(0,255,136,.3);padding:4px 12px;border-radius:20px;margin-bottom:22px}
+.hero h1{font-family:var(--mono);font-size:48px;font-weight:600;line-height:1.1;letter-spacing:-2px;
+  max-width:700px}.hero h1 span{color:var(--accent)}
+.hero-sub{font-size:16px;color:var(--text2);max-width:500px;margin:18px auto 32px;line-height:1.7}
+.hero-cta{display:flex;gap:12px}
+.btn-lg{padding:12px 28px;font-size:13px}
+.hero-stats{display:flex;gap:48px;margin-top:60px;padding-top:36px;border-top:1px solid var(--border);
+  width:100%;max-width:600px;justify-content:center}
+.hsv{font-family:var(--mono);font-size:28px;font-weight:600;color:var(--accent)}
+.hsl{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* AUTH */
+.auth-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px);padding:40px}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:36px;width:100%;max-width:420px}
+.auth-title{font-family:var(--mono);font-size:20px;font-weight:600;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:26px}
+.auth-link{color:var(--accent);cursor:pointer}
+
+/* NOTIFY */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:6px;padding:14px 18px;font-size:13px;font-family:var(--mono);z-index:999;
+  min-width:280px;display:none;animation:slideup .3s ease}
+@keyframes slideup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.notif.s{border-color:var(--accent);color:var(--accent)}
+.notif.e{border-color:var(--red);color:var(--red)}
+
+/* COUNTRY SELECTOR */
+.country-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.country-btn{padding:8px 12px;border-radius:4px;font-size:11px;font-family:var(--mono);
+  cursor:pointer;border:1px solid var(--border2);color:var(--text2);background:var(--bg3);
+  text-align:center;transition:all .15s;user-select:none}
+.country-btn:hover{border-color:var(--text2);color:var(--text)}
+.country-btn.selected{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+@media(max-width:860px){
+  .sidebar{display:none}.main{margin-left:0}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .g2,.g3{grid-template-columns:1fr}
+  .country-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="logo-t">JobAgent</div>
+    <div class="logo-s">AI Application System</div>
+  </div>
+  <div class="sb-nav">
+    <div class="nav-sec">Overview</div>
+    <div class="nav-item active" onclick="go('dashboard')"><span class="nav-icon">◈</span>Dashboard</div>
+    <div class="nav-item" onclick="go('jobs')"><span class="nav-icon">⊞</span>Job Queue</div>
+    <div class="nav-item" onclick="go('applications')"><span class="nav-icon">✦</span>Applications</div>
+    <div class="nav-sec">Setup</div>
+    <div class="nav-item" onclick="go('profile')"><span class="nav-icon">◎</span>Profile</div>
+    <div class="nav-item" onclick="go('resume')"><span class="nav-icon">⊡</span>Resume & Docs</div>
+    <div class="nav-item" onclick="go('automation')"><span class="nav-icon">⚙</span>Automation</div>
+    <div class="nav-sec">System</div>
+    <div class="nav-item" onclick="go('logs')"><span class="nav-icon">≡</span>Activity Logs</div>
+  </div>
+  <div class="sb-foot">
+    <div class="user-chip">
+      <div class="avatar">AJ</div>
+      <div><div class="uname">Abdulkadir Jabbi</div><div class="utitle">AI Robotics Engineer</div></div>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+<div class="topbar">
+  <div class="page-path" id="path">/ dashboard</div>
+  <div class="tb-right">
+    <span id="api-status" style="font-size:10px;font-family:var(--mono);color:var(--text3)">connecting…</span>
+    <div class="status-pill on" id="status-pill" onclick="toggleAuto()">
+      <div class="pulse"></div><span id="status-txt">RUNNING</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div class="page active" id="page-dashboard">
+  <div class="ph"><h1>Dashboard</h1><p>Live automation overview</p></div>
+  <div class="banner bs" id="dash-banner">● Automation running — 14 applications submitted this hour. Next scan in 23 min.</div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Jobs Found</div><div class="stat-val" id="st-found">—</div><div class="stat-delta" id="st-found-d">loading…</div></div>
+    <div class="stat-card"><div class="stat-label">Applied</div><div class="stat-val g" id="st-applied">—</div><div class="stat-delta" id="st-applied-d">loading…</div></div>
+    <div class="stat-card"><div class="stat-label">Interviews</div><div class="stat-val a" id="st-interview">—</div><div class="stat-delta">this week</div></div>
+    <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-val r" id="st-rejected">—</div><div class="stat-delta">tracked</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-title">Applications this week</div><div class="bar-chart" id="dash-chart"></div></div>
+    <div class="card"><div class="card-title">Live activity</div><div class="term" id="live-log"></div></div>
+  </div>
+  <div style="margin-top:16px">
+    <div class="card"><div class="card-title">Top matching jobs</div><div id="dash-jobs"></div></div>
+  </div>
+</div>
+
+<!-- ── JOB QUEUE ── -->
+<div class="page" id="page-jobs">
+  <div class="ph"><h1>Job Queue</h1><p>AI-found jobs — filter by country, source, or score</p></div>
+
+  <!-- Country filter -->
+  <div class="card sec">
+    <div class="card-title">Filter by Country</div>
+    <div class="country-grid" id="country-grid"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input class="fi" type="text" placeholder="Search jobs…" id="job-search" style="max-width:240px" oninput="filterJobs()">
+      <select class="fi" style="width:auto" id="src-filter" onchange="filterJobs()">
+        <option value="">All sources</option>
+        <option>linkedin</option><option>indeed</option>
+        <option>remoteok</option><option>wellfound</option><option>greenhouse</option>
+      </select>
+      <select class="fi" style="width:auto" id="score-filter" onchange="filterJobs()">
+        <option value="0">All scores</option>
+        <option value="80">≥ 80</option><option value="70">≥ 70</option><option value="60">≥ 60</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <div class="btn btn-p btn-sm" onclick="applyAllQueued()">Apply All Queued</div>
+        <div class="btn btn-g btn-sm" onclick="loadJobs()">↻ Scan Now</div>
+      </div>
+    </div>
+  </div>
+  <div id="job-list"><div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono)">Loading jobs…</div></div>
+</div>
+
+<!-- ── APPLICATIONS ── -->
+<div class="page" id="page-applications">
+  <div class="ph"><h1>Applications</h1><p>Every application submitted by the AI agent</p></div>
+  <div class="tabs">
+    <div class="tab active" onclick="filterApps('',this)">All</div>
+    <div class="tab" onclick="filterApps('pending',this)">Pending</div>
+    <div class="tab" onclick="filterApps('interview',this)">Interviews</div>
+    <div class="tab" onclick="filterApps('rejected',this)">Rejected</div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table class="dt"><thead><tr>
+      <th>Company</th><th>Role</th><th>Country</th><th>Applied</th><th>Source</th><th>Status</th><th>Match</th><th></th>
+    </tr></thead><tbody id="app-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ── PROFILE ── -->
+<div class="page" id="page-profile">
+  <div class="ph"><h1>Profile</h1><p>Your information — AI uses this to apply on your behalf</p></div>
+  <div class="g2">
+    <div>
+      <div class="card sec">
+        <div class="card-title">Personal Info</div>
+        <div class="fg"><label class="fl">Full name</label><input class="fi" id="p-name" value="Abdulkadir Jabbi"></div>
+        <div class="fg"><label class="fl">Email</label><input class="fi" id="p-email" value="abdoukadir@email.com"></div>
+        <div class="fg"><label class="fl">Phone</label><input class="fi" id="p-phone" value="+91 9319038312"></div>
+        <div class="fg"><label class="fl">Location</label><input class="fi" id="p-loc" value="India (Open to Relocation Worldwide)"></div>
+        <div class="fg"><label class="fl">Years of Experience</label><input class="fi" type="number" id="p-exp" value="3"></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Links</div>
+        <div class="fg"><label class="fl">GitHub</label><input class="fi" id="p-gh" value="github.com/abdoukadir-ai"></div>
+        <div class="fg"><label class="fl">Portfolio</label><input class="fi" id="p-port" value="abdoukadir-robotics.com"></div>
+        <div class="fg"><label class="fl">LinkedIn</label><input class="fi" id="p-li" placeholder="linkedin.com/in/abdulkadir-jabbi"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card sec">
+        <div class="card-title">Job Preferences</div>
+        <div class="fg"><label class="fl">Preferred roles</label>
+          <input class="fi" id="p-roles" value="AI Robotics Engineer, ROS2 Engineer, Autonomous Systems Engineer, Embedded AI Engineer, Computer Vision Engineer"></div>
+        <div class="fg"><label class="fl">Salary expectation (USD/yr)</label>
+          <input class="fi" type="number" id="p-sal" value="90000"></div>
+        <div class="fg"><label class="fl">Work type</label>
+          <select class="fi" id="p-work">
+            <option>remote</option><option selected>hybrid</option><option>onsite</option><option>any</option>
+          </select></div>
+        <div class="fg"><label class="fl">Work authorization</label>
+          <select class="fi" id="p-auth">
+            <option>authorized</option><option selected>requires_sponsorship</option>
+          </select></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Skills</div>
+        <div class="skill-tags" id="skill-tags"></div>
+        <div style="margin-top:12px;display:flex;gap:6px">
+          <input class="fi" type="text" placeholder="Add skill…" id="skill-inp" style="flex:1">
+          <div class="btn btn-g btn-sm" onclick="addSkill()">+ Add</div>
+        </div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Experience Summary (for AI)</div>
+        <textarea class="fi" id="p-exp-text" style="min-height:120px">ROS2 Autonomous Mobile Robot: Full Nav2 stack with RTAB-Map SLAM, <5cm indoor accuracy. AI Medical Screening Robot: multi-sensor vitals (SpO2, BP, Temp, BMI) with Firebase telemetry. AI Smart Glasses: YOLO real-time object detection on Raspberry Pi with voice feedback. Autonomous Driving Prototype: OpenCV lane detection + obstacle avoidance. Industrial Robotic Arm: pick-and-place with embedded C.</textarea>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:right;margin-top:4px">
+    <div class="btn btn-p" onclick="saveProfile()">Save Profile</div>
+  </div>
+</div>
+
+<!-- ── RESUME ── -->
+<div class="page" id="page-resume">
+  <div class="ph"><h1>Resume & Documents</h1><p>Upload once — AI customizes for every application</p></div>
+  <div class="g2">
+    <div>
+      <div class="card sec">
+        <div class="card-title">Base Resume</div>
+        <div class="upload" onclick="triggerUpload('resume-file-inp')">
+          <div class="uicon">⊡</div><div class="utxt">Drop resume or click to upload</div>
+          <div class="uhint">PDF or DOCX — max 5MB</div>
+        </div>
+        <input type="file" id="resume-file-inp" accept=".pdf,.docx" style="display:none" onchange="uploadResume(this)">
+        <div id="resume-upload-status"></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Cover Letter Template</div>
+        <div class="upload" onclick="triggerUpload('cover-file-inp')">
+          <div class="uicon">≡</div><div class="utxt">Drop template or click to upload</div>
+          <div class="uhint">PDF or DOCX — max 5MB</div>
+        </div>
+        <input type="file" id="cover-file-inp" accept=".pdf,.docx" style="display:none" onchange="uploadCover(this)">
+        <div id="cover-upload-status"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card sec">
+        <div class="card-title">AI Resume Preview</div>
+        <div style="background:var(--bg);border-radius:4px;padding:16px;font-size:12px;line-height:1.8;color:var(--text2);min-height:200px">
+          <div style="font-family:var(--mono);font-size:15px;color:var(--text);font-weight:600;margin-bottom:2px">Abdulkadir Jabbi</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">abdoukadir@email.com · +91 9319038312 · India · github.com/abdoukadir-ai</div>
+          <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Technical Skills</div>
+          <p style="color:var(--text);font-size:11px">Python · C++ · ROS2 · Nav2 · SLAM · YOLO · OpenCV · Edge AI · LiDAR · Raspberry Pi · ESP32 · Gazebo · Docker · Firebase</p>
+          <div style="margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--mono)">[ AI rewrites this for each specific job automatically ]</div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <div class="btn btn-p btn-sm" onclick="notify('Select a job from Job Queue first, then AI will generate','s')">Generate for Job</div>
+          <div class="btn btn-g btn-sm" onclick="loadGeneratedDocs()">↻ Refresh List</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Generated Documents</div>
+        <div id="gen-docs"><div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:12px">No documents yet — start automation to generate</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTOMATION ── -->
+<div class="page" id="page-automation">
+  <div class="ph"><h1>Automation Settings</h1><p>Configure how the AI agent searches and applies</p></div>
+  <div class="ctrl">
+    <div><h2>Automation Engine</h2><p id="ctrl-sub">Loading status…</p></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="big-btn on" id="big-btn" onclick="toggleAuto()">▶ RUNNING</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="card sec">
+        <div class="card-title">Target Countries</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Select countries to search jobs in. AI will prioritise these locations.</p>
+        <div class="country-grid" id="auto-country-grid"></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Application Limits</div>
+        <div class="fg"><label class="fl">Max per day: <span id="lv" style="color:var(--accent);font-family:var(--mono)">50</span></label>
+          <input type="range" min="5" max="200" value="50" step="5" oninput="document.getElementById('lv').textContent=this.value"></div>
+        <div class="fg"><label class="fl">Min match score: <span id="sv" style="color:var(--accent);font-family:var(--mono)">70</span>%</label>
+          <input type="range" min="40" max="95" value="70" step="5" oninput="document.getElementById('sv').textContent=this.value"></div>
+        <div class="fg"><label class="fl">Scan every: <span id="fv" style="color:var(--accent);font-family:var(--mono)">30</span> min</label>
+          <input type="range" min="15" max="120" value="30" step="15" oninput="document.getElementById('fv').textContent=this.value"></div>
+        <div class="fg"><label class="fl">Min salary (USD/yr)</label><input class="fi" type="number" value="60000" id="a-minsal"></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">Job Sources</div>
+        <div class="toggle-row"><div class="ti"><div class="tn">LinkedIn</div><div class="td">Easy Apply & full applications</div></div>
+          <label class="toggle"><input type="checkbox" id="s-li" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Indeed</div><div class="td">Direct apply & redirect forms</div></div>
+          <label class="toggle"><input type="checkbox" id="s-in" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">RemoteOK</div><div class="td">Remote-first job board (free API)</div></div>
+          <label class="toggle"><input type="checkbox" id="s-ro" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Wellfound</div><div class="td">Startup jobs via AngelList</div></div>
+          <label class="toggle"><input type="checkbox" id="s-wf"><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Greenhouse / Lever</div><div class="td">ATS form applications</div></div>
+          <label class="toggle"><input type="checkbox" id="s-gh" checked><div class="tt"></div><div class="th"></div></label></div>
+      </div>
+    </div>
+    <div>
+      <div class="card sec">
+        <div class="card-title">Filters</div>
+        <div class="fg"><label class="fl">Blacklisted companies (one per line)</label>
+          <textarea class="fi" id="a-bl">Meta&#10;Amazon</textarea></div>
+        <div class="fg"><label class="fl">Preferred industries (one per line)</label>
+          <textarea class="fi" id="a-ind">Robotics&#10;Autonomous Vehicles&#10;Healthcare AI&#10;Defense Tech&#10;Aerospace</textarea></div>
+      </div>
+      <div class="card sec">
+        <div class="card-title">AI Behaviour</div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Auto-answer form questions</div><div class="td">Gemini Flash answers "Why this role?" etc.</div></div>
+          <label class="toggle"><input type="checkbox" id="b-qa" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Remote preferred</div><div class="td">Prioritise remote positions</div></div>
+          <label class="toggle"><input type="checkbox" id="b-rem" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Skip duplicates</div><div class="td">Never apply to the same role twice</div></div>
+          <label class="toggle"><input type="checkbox" id="b-dup" checked><div class="tt"></div><div class="th"></div></label></div>
+        <div class="toggle-row"><div class="ti"><div class="tn">Human-like behaviour</div><div class="td">Random delays to avoid detection</div></div>
+          <label class="toggle"><input type="checkbox" id="b-hum" checked><div class="tt"></div><div class="th"></div></label></div>
+      </div>
+      <div style="text-align:right">
+        <div class="btn btn-p" onclick="saveAutomation()">Save Settings</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGS ── -->
+<div class="page" id="page-logs">
+  <div class="ph"><h1>Activity Logs</h1><p>Full audit trail from the automation engine</p></div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+    <select class="fi" style="width:auto" id="log-filter" onchange="loadLogs()">
+      <option value="">All events</option><option value="applied">Applications</option>
+      <option value="error">Errors</option><option value="skipped">Skipped</option>
+      <option value="info">Info</option>
+    </select>
+    <div class="btn btn-g btn-sm" onclick="loadLogs()">↻ Refresh</div>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="term" id="full-log" style="max-height:600px;padding:20px;border:none;border-radius:6px"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG — update API_BASE after deploying to Render
+// ─────────────────────────────────────────────────────────────
+const API_BASE = "https://jobagent-api.onrender.com/api";
+// For local testing change to: const API_BASE = "http://localhost:5000/api";
+
+// ─── AUTH TOKEN ───────────────────────────────────────────────
+const getToken  = () => localStorage.getItem("access_token");
+const setTokens = (a,r) => { localStorage.setItem("access_token",a); if(r) localStorage.setItem("refresh_token",r); };
+
+// ─── API FETCH ────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const headers = {"Content-Type":"application/json",...(opts.headers||{})};
+  if(getToken()) headers["Authorization"] = "Bearer "+getToken();
+  try {
+    const r = await fetch(API_BASE+path, {...opts, headers});
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error||"Error "+r.status);
+    return data;
+  } catch(e) {
+    console.error("API error:", e.message);
+    throw e;
+  }
+}
+
+async function apiUpload(path, formData) {
+  const headers = {};
+  if(getToken()) headers["Authorization"] = "Bearer "+getToken();
+  const r = await fetch(API_BASE+path, {method:"POST", body:formData, headers});
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error||"Upload error");
+  return data;
+}
+
+// ─── NOTIFY ───────────────────────────────────────────────────
+function notify(msg, type="s") {
+  const n = document.getElementById("notif");
+  n.textContent = (type==="s"?"✓ ":"✗ ") + msg;
+  n.className = "notif "+type;
+  n.style.display = "block";
+  setTimeout(() => n.style.display="none", 3500);
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────
+const pageTitles = {
+  dashboard:"/ dashboard", jobs:"/ jobs", applications:"/ applications",
+  profile:"/ profile", resume:"/ resume & docs", automation:"/ automation", logs:"/ logs"
+};
+
+function go(id) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.getElementById("path").textContent = pageTitles[id]||"/ "+id;
+  document.querySelectorAll(".nav-item").forEach(n=>{
+    if(n.getAttribute("onclick")?.includes("'"+id+"'")) n.classList.add("active");
+  });
+  // Load data on page visit
+  if(id==="dashboard")    loadDashboard();
+  if(id==="jobs")         loadJobs();
+  if(id==="applications") loadApplications();
+  if(id==="logs")         loadLogs();
+  if(id==="automation")   loadAutomationStatus();
+}
+
+// ─── COUNTRIES ────────────────────────────────────────────────
+const COUNTRIES = [
+  {code:"usa",    label:"🇺🇸 USA"},
+  {code:"uk",     label:"🇬🇧 UK"},
+  {code:"germany",label:"🇩🇪 Germany"},
+  {code:"canada", label:"🇨🇦 Canada"},
+  {code:"uae",    label:"🇦🇪 UAE"},
+  {code:"singapore",label:"🇸🇬 Singapore"},
+  {code:"netherlands",label:"🇳🇱 Netherlands"},
+  {code:"australia",label:"🇦🇺 Australia"},
+  {code:"india",  label:"🇮🇳 India"},
+  {code:"remote", label:"🌐 Remote"},
+  {code:"france", label:"🇫🇷 France"},
+  {code:"sweden", label:"🇸🇪 Sweden"},
+];
+
+let selectedJobCountry = "remote";
+let selectedAutoCountries = ["remote","usa","uk","germany"];
+
+function renderCountryGrid(containerId, selectedList, onSelect) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = COUNTRIES.map(c=>`
+    <div class="country-btn${selectedList.includes(c.code)?" selected":""}"
+         onclick="(${onSelect.toString()})(this,'${c.code}')">${c.label}</div>
+  `).join("");
+}
+
+function onJobCountrySelect(el, code) {
+  selectedJobCountry = code;
+  document.querySelectorAll("#country-grid .country-btn").forEach(b=>b.classList.remove("selected"));
+  el.classList.add("selected");
+  filterJobs();
+}
+
+function onAutoCountrySelect(el, code) {
+  if(selectedAutoCountries.includes(code)) {
+    selectedAutoCountries = selectedAutoCountries.filter(c=>c!==code);
+    el.classList.remove("selected");
+  } else {
+    selectedAutoCountries.push(code);
+    el.classList.add("selected");
+  }
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────
+let dashData = { total:312, pending:264, interview:7, rejected:41 };
+
+async function loadDashboard() {
+  try {
+    const s = await api("/applications/stats");
+    dashData = s;
+    document.getElementById("st-found").textContent   = "1,247";
+    document.getElementById("st-found-d").textContent = "+84 today";
+    document.getElementById("st-applied").textContent = s.total||0;
+    document.getElementById("st-applied-d").textContent = "total sent";
+    document.getElementById("st-interview").textContent = s.interview||0;
+    document.getElementById("st-rejected").textContent  = s.rejected||0;
+  } catch(e) {
+    // Use demo data if not yet connected
+    document.getElementById("st-found").textContent="1,247";
+    document.getElementById("st-found-d").textContent="+84 today";
+    document.getElementById("st-applied").textContent="312";
+    document.getElementById("st-applied-d").textContent="+14 this hour";
+    document.getElementById("st-interview").textContent="7";
+    document.getElementById("st-rejected").textContent="41";
+  }
+  renderChart();
+  renderLiveLog();
+  renderDashJobs();
+}
+
+function renderChart() {
+  const el = document.getElementById("dash-chart");
+  if(!el) return;
+  const data=[28,41,35,52,48,61,47], days=["M","T","W","T","F","S","S"], max=Math.max(...data);
+  el.innerHTML = data.map((v,i)=>`
+    <div class="bc">
+      <div class="bar" style="height:${Math.round(v/max*70)}px" title="${v} applications"></div>
+      <div class="bl">${days[i]}</div>
+    </div>`).join("");
+}
+
+const demoLogs=[
+  {t:"14:32:01",m:"Scan started — LinkedIn, RemoteOK, Indeed queried",tp:"i"},
+  {t:"14:32:08",m:"Found 18 new robotics/AI jobs this cycle",tp:"s"},
+  {t:"14:32:12",m:"Applying: AI Robotics Engineer @ Boston Dynamics (score:96)",tp:"s"},
+  {t:"14:32:24",m:"Resume generated — 31 ATS keywords injected (ROS2, Nav2, SLAM)",tp:"s"},
+  {t:"14:32:35",m:"Gemini Flash answering 5 form questions…",tp:"i"},
+  {t:"14:32:48",m:"✓ Applied: Boston Dynamics / AI Robotics Engineer",tp:"s"},
+  {t:"14:33:04",m:"✓ Applied: Waymo / ROS2 Autonomy Engineer",tp:"s"},
+  {t:"14:33:18",m:"Skipped: Junior Robotics Intern — score 48 < threshold 70",tp:"w"},
+  {t:"14:33:22",m:"Cycle complete — 2 applied, 1 skipped. Next scan in 30m",tp:"i"},
+];
+function renderLiveLog() {
+  const el=document.getElementById("live-log");
+  if(!el) return;
+  el.innerHTML=demoLogs.slice(-9).map(l=>`<div class="ll"><span class="lt">${l.t}</span><span class="lm ${l.tp}">${l.m}</span></div>`).join("");
+  el.scrollTop=el.scrollHeight;
+}
+
+const demoJobs=[
+  {id:1,title:"AI Robotics Engineer",company:"Boston Dynamics",location:"Remote / USA",country:"USA",salary_min:110000,salary_max:150000,source:"linkedin",score:96,tags:["ROS2","Python","SLAM"],apply_url:"#"},
+  {id:2,title:"ROS2 Autonomy Engineer",company:"Waymo",location:"Remote",country:"Remote",salary_min:130000,salary_max:170000,source:"indeed",score:93,tags:["ROS2","Nav2","LiDAR"],apply_url:"#"},
+  {id:3,title:"Embedded AI Engineer",company:"NVIDIA",location:"Germany / Remote",country:"Germany",salary_min:120000,salary_max:160000,source:"remoteok",score:91,tags:["Edge AI","YOLO","Raspberry Pi"],apply_url:"#"},
+];
+
+function scoreClass(s){return s>=85?"hi":s>=70?"md":"lo"}
+function renderDashJobs() {
+  const el=document.getElementById("dash-jobs");
+  if(!el) return;
+  el.innerHTML=demoJobs.map(j=>`
+    <div class="jcard">
+      <div class="jch">
+        <div><div class="jt">${j.title}</div><div class="jco">${j.company} · ${j.location}</div></div>
+        <div class="score-ring ${scoreClass(j.score)}">${j.score}</div>
+      </div>
+      <div class="jmeta">
+        ${(j.tags||[]).map(t=>`<div class="jtag">${t}</div>`).join("")}
+        <div class="jtag" style="margin-left:auto">$${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</div>
+        <div class="jtag">${j.source}</div>
+      </div>
+    </div>`).join("");
+}
+
+// ─── JOBS ─────────────────────────────────────────────────────
+let allJobs = [...demoJobs];
+
+async function loadJobs() {
+  renderCountryGrid("country-grid", [selectedJobCountry], onJobCountrySelect);
+  try {
+    const params = new URLSearchParams({country:selectedJobCountry,min_score:0,limit:100});
+    const data = await api("/jobs?"+params);
+    if(data.jobs && data.jobs.length>0) allJobs = data.jobs;
+  } catch(e) { /* use demo jobs */ }
+  filterJobs();
+}
+
+function filterJobs() {
+  const search = (document.getElementById("job-search")?.value||"").toLowerCase();
+  const src    = document.getElementById("src-filter")?.value||"";
+  const minSc  = parseInt(document.getElementById("score-filter")?.value||0);
+
+  const filtered = allJobs.filter(j=>{
+    const matchSearch = !search || j.title.toLowerCase().includes(search)||j.company.toLowerCase().includes(search);
+    const matchSrc    = !src || j.source===src;
+    const matchScore  = j.score>=minSc;
+    const matchCountry = selectedJobCountry==="remote"||!selectedJobCountry||
+                         (j.country||"").toLowerCase().includes(selectedJobCountry)||
+                         j.remote;
+    return matchSearch&&matchSrc&&matchScore&&matchCountry;
+  });
+
+  const el = document.getElementById("job-list");
+  if(!el) return;
+  if(!filtered.length){
+    el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono)">No jobs found for selected filters</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(j=>`
+    <div class="jcard">
+      <div class="jch">
+        <div>
+          <div class="jt">${j.title}</div>
+          <div class="jco">${j.company} · ${j.location}</div>
+        </div>
+        <div class="score-ring ${scoreClass(j.score)}">${j.score}</div>
+      </div>
+      <div class="jmeta">
+        ${(j.tags||[]).map(t=>`<div class="jtag">${t}</div>`).join("")}
+        ${j.salary_min?`<div class="jtag">$${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</div>`:""}
+        <div class="jtag">${j.country||"Remote"}</div>
+        <div class="jtag">${j.source}</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <div class="btn btn-p btn-sm" onclick="manualApply(${j.id})">▶ Apply Now</div>
+        <a href="${j.apply_url}" target="_blank" class="btn btn-g btn-sm">View Job ↗</a>
+        <div class="btn btn-g btn-sm" style="margin-left:auto;color:var(--red);border-color:var(--red)">Skip</div>
+      </div>
+    </div>`).join("");
+}
+
+async function manualApply(jobId) {
+  try {
+    await api(`/jobs/apply/${jobId}`, {method:"POST"});
+    notify("Application queued — AI is applying now","s");
+  } catch(e) { notify(e.message,"e"); }
+}
+
+function applyAllQueued() {
+  notify("Applying to all high-score jobs in queue…","s");
+}
+
+// ─── APPLICATIONS ─────────────────────────────────────────────
+const demoApps=[
+  {company:"Boston Dynamics",title:"AI Robotics Engineer",country:"USA",date:"2h ago",source:"linkedin",status:"pending",match_score:96},
+  {company:"Waymo",title:"ROS2 Autonomy Engineer",country:"USA",date:"3h ago",source:"indeed",status:"interview",match_score:93},
+  {company:"NVIDIA",title:"Embedded AI Engineer",country:"Germany",date:"5h ago",source:"remoteok",status:"pending",match_score:91},
+  {company:"ABB Robotics",title:"Autonomous Robot Eng",country:"Switzerland",date:"8h ago",source:"greenhouse",status:"pending",match_score:88},
+  {company:"DeepMind",title:"Computer Vision Eng",country:"UK",date:"1d ago",source:"linkedin",status:"rejected",match_score:72},
+  {company:"Agility Robotics",title:"Robotics SWE",country:"Remote",date:"1d ago",source:"remoteok",status:"interview",match_score:85},
+  {company:"Mobileye",title:"Perception Engineer",country:"Israel",date:"2d ago",source:"linkedin",status:"pending",match_score:80},
+  {company:"Sanctuary AI",title:"ROS2 Engineer",country:"Canada",date:"2d ago",source:"wellfound",status:"pending",match_score:89},
+];
+
+let currentAppFilter="";
+async function loadApplications(status="") {
+  try {
+    const params=new URLSearchParams({limit:100}); if(status) params.set("status",status);
+    const data=await api("/applications?"+params);
+    renderApps(data.applications||demoApps, status);
+  } catch(e){ renderApps(demoApps.filter(a=>!status||a.status===status)); }
+}
+function filterApps(status,el){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  currentAppFilter=status;
+  loadApplications(status);
+}
+
+const statusBadge={
+  pending:'<span class="badge bk">Pending</span>',
+  interview:'<span class="badge bg">Interview</span>',
+  rejected:'<span class="badge br">Rejected</span>',
+  accepted:'<span class="badge bg">Accepted</span>',
+};
+
+function renderApps(apps) {
+  const tb=document.getElementById("app-tbody");
+  if(!tb) return;
+  if(!apps.length){tb.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--text3);font-family:var(--mono);padding:32px">No applications yet</td></tr>`;return;}
+  tb.innerHTML=apps.map(a=>`
+    <tr>
+      <td style="font-weight:500">${a.company}</td>
+      <td>${a.title||a.role||""}</td>
+      <td><span class="badge bk">${a.country||"Remote"}</span></td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${a.applied_at||a.date||""}</td>
+      <td><span class="badge bk">${a.source}</span></td>
+      <td>${statusBadge[a.status]||""}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--mono);font-size:12px;color:${a.match_score>=80?"var(--accent)":a.match_score>=65?"var(--amber)":"var(--red)"}">${a.match_score}%</span>
+          <div class="pbar" style="width:55px"><div class="pfill" style="width:${a.match_score}%;background:${a.match_score>=80?"var(--accent)":a.match_score>=65?"var(--amber)":"var(--red)"}"></div></div>
+        </div>
+      </td>
+      <td><div class="btn btn-g btn-sm">View</div></td>
+    </tr>`).join("");
+}
+
+// ─── PROFILE ──────────────────────────────────────────────────
+let skills = ["Python","C++","Embedded C","ROS2","Nav2","SLAM","RTAB-Map","ORB-SLAM",
+               "OpenCV","YOLO","Computer Vision","Deep Learning","Edge AI",
+               "LiDAR","IMU","Raspberry Pi","ESP32","Gazebo","RViz",
+               "Docker","Linux","Firebase","REST APIs","Sensor Fusion","Autonomous Navigation"];
+
+function renderSkills() {
+  const el=document.getElementById("skill-tags");
+  if(!el) return;
+  el.innerHTML=skills.map((s,i)=>`<div class="stag" onclick="removeSkill(${i})">${s} ×</div>`).join("")
+    +`<div class="sadd" onclick="document.getElementById('skill-inp').focus()">+ add</div>`;
+}
+function addSkill(){
+  const i=document.getElementById("skill-inp");
+  if(i?.value.trim()){skills.push(i.value.trim());i.value="";renderSkills();}
+}
+function removeSkill(i){skills.splice(i,1);renderSkills();}
+
+async function saveProfile() {
+  const payload={
+    name: document.getElementById("p-name").value,
+    email: document.getElementById("p-email").value,
+    phone: document.getElementById("p-phone").value,
+    location: document.getElementById("p-loc").value,
+    github_url: document.getElementById("p-gh").value,
+    portfolio_url: document.getElementById("p-port").value,
+    linkedin_url: document.getElementById("p-li").value,
+    years_experience: parseInt(document.getElementById("p-exp").value)||0,
+    salary_expectation: parseInt(document.getElementById("p-sal").value)||0,
+    work_preference: document.getElementById("p-work").value,
+    work_authorization: document.getElementById("p-auth").value,
+    experience_text: document.getElementById("p-exp-text").value,
+    preferred_roles: document.getElementById("p-roles").value.split(",").map(s=>s.trim()),
+    skills: skills,
+  };
+  try {
+    await api("/profile", {method:"PUT", body:JSON.stringify(payload)});
+    notify("Profile saved successfully","s");
+  } catch(e) { notify(e.message,"e"); }
+}
+
+// ─── RESUME ───────────────────────────────────────────────────
+function triggerUpload(id){ document.getElementById(id).click(); }
+
+async function uploadResume(inp) {
+  const fd=new FormData(); fd.append("file",inp.files[0]);
+  try {
+    await apiUpload("/resume/upload",fd);
+    document.getElementById("resume-upload-status").innerHTML=`<div class="banner bs" style="margin-top:12px">✓ ${inp.files[0].name} uploaded</div>`;
+    notify("Resume uploaded","s");
+  } catch(e) { notify(e.message,"e"); }
+}
+
+async function uploadCover(inp) {
+  const fd=new FormData(); fd.append("file",inp.files[0]);
+  try {
+    await apiUpload("/resume/upload-cover",fd);
+    document.getElementById("cover-upload-status").innerHTML=`<div class="banner bs" style="margin-top:12px">✓ ${inp.files[0].name} uploaded</div>`;
+    notify("Cover letter uploaded","s");
+  } catch(e) { notify(e.message,"e"); }
+}
+
+async function loadGeneratedDocs() {
+  try {
+    const d=await api("/resume/list");
+    const el=document.getElementById("gen-docs");
+    if(!el) return;
+    if(!d.resumes?.length && !d.cover_letters?.length) {
+      el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:12px">No documents yet</div>`;
+      return;
+    }
+    el.innerHTML=`<table class="dt"><thead><tr><th>Job</th><th>Type</th><th>ATS</th><th>Date</th><th></th></tr></thead><tbody>`
+      +(d.resumes||[]).map(r=>`<tr>
+        <td>${r.job_title||""} — ${r.company||""}</td>
+        <td><span class="badge bb">Resume</span></td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--accent)">${r.ats_score||"—"}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.generated_at?.slice(0,10)||""}</td>
+        <td><a href="${API_BASE}/resume/download/resume/${r.id}" class="btn btn-g btn-sm" target="_blank">↓ PDF</a></td>
+      </tr>`).join("")
+      +(d.cover_letters||[]).map(c=>`<tr>
+        <td>${c.company||""}</td>
+        <td><span class="badge ba">Cover</span></td>
+        <td>—</td>
+        <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${c.generated_at?.slice(0,10)||""}</td>
+        <td><a href="${API_BASE}/resume/download/cover/${c.id}" class="btn btn-g btn-sm" target="_blank">↓ PDF</a></td>
+      </tr>`).join("")
+      +`</tbody></table>`;
+  } catch(e) { notify(e.message,"e"); }
+}
+
+// ─── AUTOMATION ───────────────────────────────────────────────
+let autoRunning = true;
+
+async function loadAutomationStatus() {
+  renderCountryGrid("auto-country-grid", selectedAutoCountries, onAutoCountrySelect);
+  try {
+    const s=await api("/automation/status");
+    autoRunning=s.is_running;
+    updateAutoUI();
+    document.getElementById("ctrl-sub").textContent=
+      autoRunning?`Running — scanning every ${s.scan_interval_mins||30} minutes`:"Stopped — automation paused";
+    if(s.target_countries?.length) selectedAutoCountries=s.target_countries;
+    renderCountryGrid("auto-country-grid", selectedAutoCountries, onAutoCountrySelect);
+  } catch(e) {
+    document.getElementById("ctrl-sub").textContent="Could not connect to API";
+  }
+}
+
+function updateAutoUI() {
+  const pill=document.getElementById("status-pill");
+  const txt =document.getElementById("status-txt");
+  const btn =document.getElementById("big-btn");
+  if(autoRunning){
+    pill.className="status-pill on"; txt.textContent="RUNNING";
+    if(btn){btn.className="big-btn on";btn.textContent="▶ RUNNING";}
+  } else {
+    pill.className="status-pill off"; txt.textContent="STOPPED";
+    if(btn){btn.className="big-btn off";btn.textContent="■ STOPPED";}
+  }
+}
+
+async function toggleAuto() {
+  try {
+    if(autoRunning){ await api("/automation/stop",{method:"POST"}); autoRunning=false; }
+    else           { await api("/automation/start",{method:"POST"}); autoRunning=true;  }
+    updateAutoUI();
+    notify(autoRunning?"Automation started":"Automation stopped", "s");
+  } catch(e) {
+    autoRunning=!autoRunning;
+    notify("Toggle failed — "+e.message,"e");
+  }
+}
+
+async function saveAutomation() {
+  const payload={
+    daily_limit: parseInt(document.getElementById("lv").textContent)||50,
+    min_score:   parseInt(document.getElementById("sv").textContent)||70,
+    scan_interval_mins: parseInt(document.getElementById("fv").textContent)||30,
+    min_salary:  parseInt(document.getElementById("a-minsal").value)||0,
+    target_countries: selectedAutoCountries,
+    blacklisted_companies: document.getElementById("a-bl").value.split("\n").map(s=>s.trim()).filter(Boolean),
+    preferred_industries:  document.getElementById("a-ind").value.split("\n").map(s=>s.trim()).filter(Boolean),
+    use_linkedin:   document.getElementById("s-li").checked,
+    use_indeed:     document.getElementById("s-in").checked,
+    use_remoteok:   document.getElementById("s-ro").checked,
+    use_wellfound:  document.getElementById("s-wf").checked,
+    use_greenhouse: document.getElementById("s-gh").checked,
+    auto_answer:    document.getElementById("b-qa").checked,
+    remote_only:    document.getElementById("b-rem").checked,
+    skip_duplicates:document.getElementById("b-dup").checked,
+    human_like:     document.getElementById("b-hum").checked,
+  };
+  try {
+    await api("/automation/settings",{method:"PUT",body:JSON.stringify(payload)});
+    notify("Automation settings saved","s");
+  } catch(e){ notify(e.message,"e"); }
+}
+
+// ─── LOGS ─────────────────────────────────────────────────────
+const typeClass={applied:"s",error:"e",info:"i",skipped:"w",system:"i"};
+
+async function loadLogs() {
+  const etype=document.getElementById("log-filter")?.value||"";
+  try {
+    const params=new URLSearchParams({limit:200}); if(etype) params.set("type",etype);
+    const data=await api("/automation/logs?"+params);
+    const el=document.getElementById("full-log");
+    if(!el) return;
+    if(!data.logs?.length){
+      el.innerHTML=`<div class="ll"><span class="lt">—</span><span class="lm">No logs yet — start automation first</span></div>`;
+      return;
+    }
+    el.innerHTML=data.logs.map(l=>`
+      <div class="ll">
+        <span class="lt">${l.created_at?.slice(11,19)||""}</span>
+        <span class="lm ${typeClass[l.event_type]||""}">${l.message}</span>
+      </div>`).join("");
+    el.scrollTop=el.scrollHeight;
+  } catch(e) {
+    // show demo logs
+    const el=document.getElementById("full-log");
+    if(!el) return;
+    el.innerHTML=demoLogs.map(l=>`<div class="ll"><span class="lt">${l.t}</span><span class="lm ${l.tp}">${l.m}</span></div>`).join("");
+  }
+}
+
+// ─── API HEALTH CHECK ─────────────────────────────────────────
+async function checkApiHealth() {
+  try {
+    const d=await fetch(API_BASE+"/health").then(r=>r.json());
+    document.getElementById("api-status").textContent="API ✓ "+d.model;
+    document.getElementById("api-status").style.color="var(--accent)";
+  } catch(e) {
+    document.getElementById("api-status").textContent="API offline";
+    document.getElementById("api-status").style.color="var(--red)";
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded",()=>{
+  renderSkills();
+  loadDashboard();
+  checkApiHealth();
+  renderCountryGrid("country-grid",[selectedJobCountry],onJobCountrySelect);
+  renderCountryGrid("auto-country-grid",selectedAutoCountries,onAutoCountrySelect);
+  // Refresh dashboard stats every 60s
+  setInterval(loadDashboard, 60000);
+  setInterval(checkApiHealth, 30000);
+});
+</script>
+</body>
+</html>
