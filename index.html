@@ -545,9 +545,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   </div>
 </div>
 
-</div><!-- /main -->
-</div><!-- /app -->
-
 <!-- NOTIFICATION -->
 <div class="notif" id="notif"></div>
 
@@ -557,34 +554,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 // ─────────────────────────────────────────────────────────────
 const API_BASE = "https://ai-agent-back-end.onrender.com/api";
 // For local testing change to: const API_BASE = "http://localhost:5000/api";
-
-// ─── AUTH TOKEN ───────────────────────────────────────────────
-const getToken  = () => localStorage.getItem("access_token");
-const setTokens = (a,r) => { localStorage.setItem("access_token",a); if(r) localStorage.setItem("refresh_token",r); };
-
-// ─── API FETCH ────────────────────────────────────────────────
-async function api(path, opts={}) {
-  const headers = {"Content-Type":"application/json",...(opts.headers||{})};
-  if(getToken()) headers["Authorization"] = "Bearer "+getToken();
-  try {
-    const r = await fetch(API_BASE+path, {...opts, headers});
-    const data = await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(data.error||"Error "+r.status);
-    return data;
-  } catch(e) {
-    console.error("API error:", e.message);
-    throw e;
-  }
-}
-
-async function apiUpload(path, formData) {
-  const headers = {};
-  if(getToken()) headers["Authorization"] = "Bearer "+getToken();
-  const r = await fetch(API_BASE+path, {method:"POST", body:formData, headers});
-  const data = await r.json().catch(()=>({}));
-  if(!r.ok) throw new Error(data.error||"Upload error");
-  return data;
-}
 
 // ─── NOTIFY ───────────────────────────────────────────────────
 function notify(msg, type="s") {
@@ -1196,6 +1165,7 @@ window.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
+</div><!-- /main -->
 </div><!-- /app-shell -->
 
 <!-- AUTH SHELL -->
