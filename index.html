@@ -256,7 +256,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 </style>
 </head>
 <body>
-<div class="app">
+<div id="app-shell" style="display:none" class="app">
 
 <!-- SIDEBAR -->
 <nav class="sidebar">
@@ -281,6 +281,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="avatar">AJ</div>
       <div><div class="uname">Abdulkadir Jabbi</div><div class="utitle">AI Robotics Engineer</div></div>
     </div>
+    <div onclick="doLogout()" style="margin-top:10px;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;padding:6px 0;border-top:1px solid var(--border);text-align:center">⏻ Sign out</div>
   </div>
 </nav>
 
@@ -1064,16 +1065,165 @@ async function checkApiHealth() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded",()=>{
+// ─── AUTH SYSTEM ──────────────────────────────────────────────
+function getToken(){ return localStorage.getItem("ja_token"); }
+function saveToken(t){ localStorage.setItem("ja_token",t); }
+function clearToken(){ localStorage.removeItem("ja_token"); localStorage.removeItem("ja_user"); }
+function saveUser(u){ localStorage.setItem("ja_user",JSON.stringify(u)); }
+function getUser(){ try{ return JSON.parse(localStorage.getItem("ja_user")||"{}"); }catch(e){ return {}; } }
+function isLoggedIn(){ return !!getToken(); }
+
+// Override api() to use stored token
+async function api(path, opts={}) {
+  const headers = {"Content-Type":"application/json",...(opts.headers||{})};
+  const token = getToken();
+  if(token) headers["Authorization"] = "Bearer "+token;
+  try {
+    const r = await fetch(API_BASE+path, {...opts, headers});
+    if(r.status===401){ showAuthPage(); return null; }
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.error||"Error "+r.status);
+    return data;
+  } catch(e) {
+    console.error("API:", e.message);
+    throw e;
+  }
+}
+
+async function apiUpload(path, formData) {
+  const headers = {};
+  const token = getToken();
+  if(token) headers["Authorization"] = "Bearer "+token;
+  const r = await fetch(API_BASE+path, {method:"POST", body:formData, headers});
+  const data = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error||"Upload error");
+  return data;
+}
+
+// ─── SHOW AUTH or APP ─────────────────────────────────────────
+function showAuthPage(){
+  document.getElementById("app-shell").style.display = "none";
+  document.getElementById("auth-shell").style.display = "flex";
+  showAuthTab("login");
+}
+
+function showApp(){
+  document.getElementById("auth-shell").style.display = "none";
+  document.getElementById("app-shell").style.display  = "flex";
+  const u = getUser();
+  if(u.name){
+    document.querySelector(".uname").textContent  = u.name;
+    document.querySelector(".utitle").textContent = u.email||"AI Robotics Engineer";
+    const initials = u.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+    document.querySelector(".avatar").textContent = initials;
+  }
   renderSkills();
   loadDashboard();
   checkApiHealth();
   renderCountryGrid("country-grid",[selectedJobCountry],onJobCountrySelect);
   renderCountryGrid("auto-country-grid",selectedAutoCountries,onAutoCountrySelect);
-  // Refresh dashboard stats every 60s
   setInterval(loadDashboard, 60000);
   setInterval(checkApiHealth, 30000);
+}
+
+function showAuthTab(tab){
+  document.getElementById("auth-login").style.display    = tab==="login"    ? "block":"none";
+  document.getElementById("auth-register").style.display = tab==="register" ? "block":"none";
+}
+
+async function doLogin(){
+  const email = document.getElementById("login-email").value.trim();
+  const pass  = document.getElementById("login-pass").value;
+  const btn   = document.getElementById("login-btn");
+  if(!email||!pass){ notify("Enter email and password","e"); return; }
+  btn.textContent="Signing in…"; btn.style.opacity="0.6";
+  try {
+    const d = await fetch(API_BASE+"/auth/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password:pass})
+    }).then(r=>r.json());
+    if(d.access_token){
+      saveToken(d.access_token);
+      saveUser(d.user||{});
+      showApp();
+    } else {
+      notify(d.error||"Login failed","e");
+    }
+  } catch(e){ notify("Cannot reach API — check connection","e"); }
+  btn.textContent="Sign In →"; btn.style.opacity="1";
+}
+
+async function doRegister(){
+  const name  = document.getElementById("reg-name").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
+  const pass  = document.getElementById("reg-pass").value;
+  const btn   = document.getElementById("reg-btn");
+  if(!name||!email||!pass){ notify("Fill all fields","e"); return; }
+  if(pass.length<8){ notify("Password must be at least 8 characters","e"); return; }
+  btn.textContent="Creating…"; btn.style.opacity="0.6";
+  try {
+    const d = await fetch(API_BASE+"/auth/register",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name,email,password:pass})
+    }).then(r=>r.json());
+    if(d.access_token){
+      saveToken(d.access_token);
+      saveUser(d.user||{name,email});
+      notify("Account created! Welcome "+name,"s");
+      showApp();
+    } else {
+      notify(d.error||"Registration failed","e");
+    }
+  } catch(e){ notify("Cannot reach API","e"); }
+  btn.textContent="Create Account →"; btn.style.opacity="1";
+}
+
+function doLogout(){
+  clearToken();
+  showAuthPage();
+  notify("Logged out","s");
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded",()=>{
+  if(isLoggedIn()){
+    showApp();
+  } else {
+    showAuthPage();
+  }
 });
 </script>
+
+</div><!-- /app-shell -->
+
+<!-- AUTH SHELL -->
+<div id="auth-shell" style="display:none;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);flex-direction:column;gap:0">
+  <div style="margin-bottom:32px;text-align:center">
+    <div style="font-family:var(--mono);font-size:24px;font-weight:600;color:var(--accent)">JobAgent</div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase">AI Application System</div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="auth-login" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:36px;width:100%;max-width:400px">
+    <div style="font-family:var(--mono);font-size:18px;font-weight:600;margin-bottom:4px">Sign in</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px">No account? <span style="color:var(--accent);cursor:pointer" onclick="showAuthTab('register')">Create one</span></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" id="login-email" type="email" placeholder="abdoukadir@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" id="login-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div id="login-btn" class="btn btn-p" style="width:100%;justify-content:center;padding:11px;margin-top:8px;cursor:pointer" onclick="doLogin()">Sign In →</div>
+  </div>
+
+  <!-- REGISTER -->
+  <div id="auth-register" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:36px;width:100%;max-width:400px">
+    <div style="font-family:var(--mono);font-size:18px;font-weight:600;margin-bottom:4px">Create account</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Already have one? <span style="color:var(--accent);cursor:pointer" onclick="showAuthTab('login')">Sign in</span></div>
+    <div class="fg"><label class="fl">Full name</label><input class="fi" id="reg-name" type="text" placeholder="Abdulkadir Jabbi"></div>
+    <div class="fg"><label class="fl">Email</label><input class="fi" id="reg-email" type="email" placeholder="abdoukadir@email.com"></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" id="reg-pass" type="password" placeholder="Min 8 characters" onkeydown="if(event.key==='Enter')doRegister()"></div>
+    <div id="reg-btn" class="btn btn-p" style="width:100%;justify-content:center;padding:11px;margin-top:8px;cursor:pointer" onclick="doRegister()">Create Account →</div>
+  </div>
+</div>
+
 </body>
 </html>
