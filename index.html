@@ -300,7 +300,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 <!-- ── DASHBOARD ── -->
 <div class="page active" id="page-dashboard">
   <div class="ph"><h1>Dashboard</h1><p>Live automation overview</p></div>
-  <div class="banner bs" id="dash-banner">● Automation running — 14 applications submitted this hour. Next scan in 23 min.</div>
+  <div class="banner bi" id="dash-banner">◎ Go to Automation → press ▶ RUNNING to start scanning jobs automatically every 30 minutes.</div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-label">Jobs Found</div><div class="stat-val" id="st-found">—</div><div class="stat-delta" id="st-found-d">loading…</div></div>
     <div class="stat-card"><div class="stat-label">Applied</div><div class="stat-val g" id="st-applied">—</div><div class="stat-delta" id="st-applied-d">loading…</div></div>
@@ -558,6 +558,7 @@ const API_BASE = "https://ai-agent-back-end.onrender.com/api";
 // ─── NOTIFY ───────────────────────────────────────────────────
 function notify(msg, type="s") {
   const n = document.getElementById("notif");
+  if(!n) return;
   n.textContent = (type==="s"?"✓ ":"✗ ") + msg;
   n.className = "notif "+type;
   n.style.display = "block";
@@ -584,6 +585,7 @@ function go(id) {
   if(id==="applications") loadApplications();
   if(id==="logs")         loadLogs();
   if(id==="automation")   loadAutomationStatus();
+  if(id==="profile")      loadProfile();
 }
 
 // ─── COUNTRIES ────────────────────────────────────────────────
@@ -637,21 +639,21 @@ let dashData = { total:312, pending:264, interview:7, rejected:41 };
 async function loadDashboard() {
   try {
     const s = await api("/applications/stats");
-    dashData = s;
-    document.getElementById("st-found").textContent   = "1,247";
-    document.getElementById("st-found-d").textContent = "+84 today";
-    document.getElementById("st-applied").textContent = s.total||0;
-    document.getElementById("st-applied-d").textContent = "total sent";
-    document.getElementById("st-interview").textContent = s.interview||0;
-    document.getElementById("st-rejected").textContent  = s.rejected||0;
+    if(s) {
+      document.getElementById("st-found").textContent    = s.total>0 ? s.total : "0";
+      document.getElementById("st-found-d").textContent  = "jobs in database";
+      document.getElementById("st-applied").textContent  = s.total||0;
+      document.getElementById("st-applied-d").textContent = s.total>0 ? "total sent" : "start automation ↓";
+      document.getElementById("st-interview").textContent = s.interview||0;
+      document.getElementById("st-rejected").textContent  = s.rejected||0;
+    }
   } catch(e) {
-    // Use demo data if not yet connected
-    document.getElementById("st-found").textContent="1,247";
-    document.getElementById("st-found-d").textContent="+84 today";
-    document.getElementById("st-applied").textContent="312";
-    document.getElementById("st-applied-d").textContent="+14 this hour";
-    document.getElementById("st-interview").textContent="7";
-    document.getElementById("st-rejected").textContent="41";
+    document.getElementById("st-found").textContent="—";
+    document.getElementById("st-found-d").textContent="API connecting…";
+    document.getElementById("st-applied").textContent="—";
+    document.getElementById("st-applied-d").textContent="";
+    document.getElementById("st-interview").textContent="—";
+    document.getElementById("st-rejected").textContent="—";
   }
   renderChart();
   renderLiveLog();
@@ -669,35 +671,22 @@ function renderChart() {
     </div>`).join("");
 }
 
-const demoLogs=[
-  {t:"14:32:01",m:"Scan started — LinkedIn, RemoteOK, Indeed queried",tp:"i"},
-  {t:"14:32:08",m:"Found 18 new robotics/AI jobs this cycle",tp:"s"},
-  {t:"14:32:12",m:"Applying: AI Robotics Engineer @ Boston Dynamics (score:96)",tp:"s"},
-  {t:"14:32:24",m:"Resume generated — 31 ATS keywords injected (ROS2, Nav2, SLAM)",tp:"s"},
-  {t:"14:32:35",m:"Gemini Flash answering 5 form questions…",tp:"i"},
-  {t:"14:32:48",m:"✓ Applied: Boston Dynamics / AI Robotics Engineer",tp:"s"},
-  {t:"14:33:04",m:"✓ Applied: Waymo / ROS2 Autonomy Engineer",tp:"s"},
-  {t:"14:33:18",m:"Skipped: Junior Robotics Intern — score 48 < threshold 70",tp:"w"},
-  {t:"14:33:22",m:"Cycle complete — 2 applied, 1 skipped. Next scan in 30m",tp:"i"},
-];
 function renderLiveLog() {
   const el=document.getElementById("live-log");
   if(!el) return;
-  el.innerHTML=demoLogs.slice(-9).map(l=>`<div class="ll"><span class="lt">${l.t}</span><span class="lm ${l.tp}">${l.m}</span></div>`).join("");
-  el.scrollTop=el.scrollHeight;
+  el.innerHTML=`<div class="ll"><span class="lt">--:--:--</span><span class="lm i">Go to Automation → press ▶ RUNNING to start</span></div>`;
 }
 
-const demoJobs=[
-  {id:1,title:"AI Robotics Engineer",company:"Boston Dynamics",location:"Remote / USA",country:"USA",salary_min:110000,salary_max:150000,source:"linkedin",score:96,tags:["ROS2","Python","SLAM"],apply_url:"#"},
-  {id:2,title:"ROS2 Autonomy Engineer",company:"Waymo",location:"Remote",country:"Remote",salary_min:130000,salary_max:170000,source:"indeed",score:93,tags:["ROS2","Nav2","LiDAR"],apply_url:"#"},
-  {id:3,title:"Embedded AI Engineer",company:"NVIDIA",location:"Germany / Remote",country:"Germany",salary_min:120000,salary_max:160000,source:"remoteok",score:91,tags:["Edge AI","YOLO","Raspberry Pi"],apply_url:"#"},
-];
 
 function scoreClass(s){return s>=85?"hi":s>=70?"md":"lo"}
 function renderDashJobs() {
   const el=document.getElementById("dash-jobs");
   if(!el) return;
-  el.innerHTML=demoJobs.map(j=>`
+  if(!allJobs.length){
+    el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text3);font-family:var(--mono);font-size:12px">No jobs yet — go to <span style="color:var(--accent);cursor:pointer" onclick="go('automation')">Automation</span> and press ▶ RUNNING</div>`;
+    return;
+  }
+  el.innerHTML=allJobs.slice(0,3).map(j=>`
     <div class="jcard">
       <div class="jch">
         <div><div class="jt">${j.title}</div><div class="jco">${j.company} · ${j.location}</div></div>
@@ -705,23 +694,49 @@ function renderDashJobs() {
       </div>
       <div class="jmeta">
         ${(j.tags||[]).map(t=>`<div class="jtag">${t}</div>`).join("")}
-        <div class="jtag" style="margin-left:auto">$${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</div>
+        ${j.salary_min?`<div class="jtag" style="margin-left:auto">$${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</div>`:""}
         <div class="jtag">${j.source}</div>
       </div>
     </div>`).join("");
 }
 
 // ─── JOBS ─────────────────────────────────────────────────────
-let allJobs = [...demoJobs];
+let allJobs = [];
 
 async function loadJobs() {
   renderCountryGrid("country-grid", [selectedJobCountry], onJobCountrySelect);
+  const el = document.getElementById("job-list");
+  if(el) el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono)">Loading jobs from API…</div>`;
   try {
     const params = new URLSearchParams({country:selectedJobCountry,min_score:0,limit:100});
     const data = await api("/jobs?"+params);
-    if(data.jobs && data.jobs.length>0) allJobs = data.jobs;
-  } catch(e) { /* use demo jobs */ }
+    if(data && data.jobs && data.jobs.length>0) {
+      allJobs = data.jobs;
+    } else {
+      // No real jobs yet — show message and trigger scan
+      if(el) el.innerHTML=`
+        <div style="text-align:center;padding:40px;color:var(--text3);font-family:var(--mono)">
+          <div style="font-size:20px;margin-bottom:12px">⟳</div>
+          <div style="color:var(--text2);margin-bottom:8px">No jobs scanned yet</div>
+          <div style="font-size:12px;margin-bottom:20px">Start automation to scan jobs automatically, or click Scan Now</div>
+          <div class="btn btn-p btn-sm" onclick="triggerScan()">▶ Scan for Jobs Now</div>
+        </div>`;
+      return;
+    }
+  } catch(e) {
+    console.log("Jobs load error:", e.message);
+  }
   filterJobs();
+}
+
+async function triggerScan() {
+  try {
+    await api("/automation/start", {method:"POST"});
+    notify("Scan started! Jobs will appear in 1-2 minutes","s");
+    setTimeout(loadJobs, 90000); // reload after 90s
+    const el = document.getElementById("job-list");
+    if(el) el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--accent);font-family:var(--mono)"><div style="font-size:20px;margin-bottom:12px">◉</div>AI is scanning jobs now… check back in 1-2 minutes</div>`;
+  } catch(e) { notify(e.message,"e"); }
 }
 
 function filterJobs() {
@@ -780,24 +795,14 @@ function applyAllQueued() {
 }
 
 // ─── APPLICATIONS ─────────────────────────────────────────────
-const demoApps=[
-  {company:"Boston Dynamics",title:"AI Robotics Engineer",country:"USA",date:"2h ago",source:"linkedin",status:"pending",match_score:96},
-  {company:"Waymo",title:"ROS2 Autonomy Engineer",country:"USA",date:"3h ago",source:"indeed",status:"interview",match_score:93},
-  {company:"NVIDIA",title:"Embedded AI Engineer",country:"Germany",date:"5h ago",source:"remoteok",status:"pending",match_score:91},
-  {company:"ABB Robotics",title:"Autonomous Robot Eng",country:"Switzerland",date:"8h ago",source:"greenhouse",status:"pending",match_score:88},
-  {company:"DeepMind",title:"Computer Vision Eng",country:"UK",date:"1d ago",source:"linkedin",status:"rejected",match_score:72},
-  {company:"Agility Robotics",title:"Robotics SWE",country:"Remote",date:"1d ago",source:"remoteok",status:"interview",match_score:85},
-  {company:"Mobileye",title:"Perception Engineer",country:"Israel",date:"2d ago",source:"linkedin",status:"pending",match_score:80},
-  {company:"Sanctuary AI",title:"ROS2 Engineer",country:"Canada",date:"2d ago",source:"wellfound",status:"pending",match_score:89},
-];
 
 let currentAppFilter="";
 async function loadApplications(status="") {
   try {
     const params=new URLSearchParams({limit:100}); if(status) params.set("status",status);
     const data=await api("/applications?"+params);
-    renderApps(data.applications||demoApps, status);
-  } catch(e){ renderApps(demoApps.filter(a=>!status||a.status===status)); }
+    renderApps(data.applications||[]);
+  } catch(e){ renderApps([]); }
 }
 function filterApps(status,el){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -852,6 +857,31 @@ function addSkill(){
   if(i?.value.trim()){skills.push(i.value.trim());i.value="";renderSkills();}
 }
 function removeSkill(i){skills.splice(i,1);renderSkills();}
+
+// ─── LOAD PROFILE FROM API ────────────────────────────────────
+async function loadProfile() {
+  try {
+    const p = await api("/profile");
+    if(!p) return;
+    if(p.name)               document.getElementById("p-name").value   = p.name;
+    if(p.email)              document.getElementById("p-email").value  = p.email;
+    if(p.phone)              document.getElementById("p-phone").value  = p.phone||"";
+    if(p.location)           document.getElementById("p-loc").value    = p.location||"";
+    if(p.github_url)         document.getElementById("p-gh").value     = p.github_url||"";
+    if(p.portfolio_url)      document.getElementById("p-port").value   = p.portfolio_url||"";
+    if(p.linkedin_url)       document.getElementById("p-li").value     = p.linkedin_url||"";
+    if(p.years_experience)   document.getElementById("p-exp").value    = p.years_experience||3;
+    if(p.salary_expectation) document.getElementById("p-sal").value   = p.salary_expectation||90000;
+    if(p.work_preference)    document.getElementById("p-work").value   = p.work_preference||"remote";
+    if(p.work_authorization) document.getElementById("p-auth").value  = p.work_authorization||"requires_sponsorship";
+    if(p.experience_text)    document.getElementById("p-exp-text").value = p.experience_text||"";
+    if(p.preferred_roles && p.preferred_roles.length)
+      document.getElementById("p-roles").value = p.preferred_roles.join(", ");
+    if(p.skills && p.skills.length) { skills = p.skills; renderSkills(); }
+  } catch(e) {
+    console.log("Profile load:", e.message);
+  }
+}
 
 async function saveProfile() {
   const payload={
@@ -1017,7 +1047,7 @@ async function loadLogs() {
     // show demo logs
     const el=document.getElementById("full-log");
     if(!el) return;
-    el.innerHTML=demoLogs.map(l=>`<div class="ll"><span class="lt">${l.t}</span><span class="lm ${l.tp}">${l.m}</span></div>`).join("");
+    el.innerHTML=`<div class="ll"><span class="lt">--:--:--</span><span class="lm i">No logs yet — start automation first</span></div>`;
   }
 }
 
@@ -1087,12 +1117,37 @@ function showApp(){
     document.querySelector(".avatar").textContent = initials;
   }
   renderSkills();
+  // Save default profile so AI has data to work with immediately
+  _saveDefaultProfile();
   loadDashboard();
   checkApiHealth();
   renderCountryGrid("country-grid",[selectedJobCountry],onJobCountrySelect);
   renderCountryGrid("auto-country-grid",selectedAutoCountries,onAutoCountrySelect);
   setInterval(loadDashboard, 60000);
   setInterval(checkApiHealth, 30000);
+}
+
+async function _saveDefaultProfile() {
+  try {
+    const existing = await api("/profile");
+    // Only save defaults if profile is empty
+    if(existing && existing.preferred_roles && existing.preferred_roles.length > 0) return;
+    await api("/profile", {method:"PUT", body:JSON.stringify({
+      name: "Abdulkadir Jabbi",
+      phone: "+91 9319038312",
+      location: "India (Open to Relocation Worldwide)",
+      github_url: "github.com/abdoukadir-ai",
+      portfolio_url: "abdoukadir-robotics.com",
+      years_experience: 3,
+      salary_expectation: 90000,
+      work_preference: "remote",
+      work_authorization: "requires_sponsorship",
+      preferred_roles: ["AI Robotics Engineer","ROS2 Engineer","Embedded AI Engineer","Computer Vision Engineer","Autonomous Systems Engineer"],
+      preferred_countries: ["USA","UK","Germany","Canada","Remote"],
+      skills: ["Python","C++","ROS2","Nav2","SLAM","RTAB-Map","ORB-SLAM","OpenCV","YOLO","Computer Vision","Deep Learning","Edge AI","LiDAR","IMU","Raspberry Pi","ESP32","Gazebo","Docker","Linux","Firebase"],
+      experience_text: "ROS2 Autonomous Mobile Robot: Full Nav2 stack, RTAB-Map SLAM, <5cm indoor accuracy. AI Medical Screening Robot: multi-sensor vitals (SpO2, BP, Temp, BMI) with Firebase. AI Smart Glasses: YOLO real-time object detection on Raspberry Pi with voice feedback. Autonomous Driving Prototype: OpenCV lane detection. Industrial Robotic Arm: pick-and-place with embedded C."
+    })});
+  } catch(e) { console.log("Default profile:", e.message); }
 }
 
 function showAuthTab(tab){
